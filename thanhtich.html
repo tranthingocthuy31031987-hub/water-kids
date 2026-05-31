@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Thành tích của bé</title>
+
+<style>
+body{
+    font-family:Arial, sans-serif;
+    margin:0;
+    background:#f4f6f9;
+    color:#222;
+    text-align:center;
+}
+
+.header{
+    background:#fb8c00;
+    color:white;
+    padding:35px 20px;
+}
+
+.header h1{
+    margin:0;
+    font-size:40px;
+}
+
+.container{
+    max-width:900px;
+    margin:35px auto;
+    background:white;
+    padding:35px;
+    border-radius:18px;
+    box-shadow:0 8px 25px rgba(0,0,0,0.12);
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:20px;
+    margin-top:25px;
+}
+
+.card{
+    background:#fff8e1;
+    border-radius:15px;
+    padding:25px;
+    border:2px solid #ffe0b2;
+}
+
+.card h2{
+    margin:0;
+    font-size:40px;
+    color:#ef6c00;
+}
+
+.card p{
+    margin-top:10px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+button{
+    padding:14px 24px;
+    border:none;
+    border-radius:10px;
+    background:#d32f2f;
+    color:white;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:25px;
+}
+
+button:hover{
+    background:#b71c1c;
+}
+
+.back{
+    display:inline-block;
+    margin-top:25px;
+    background:#1976d2;
+    color:white;
+    padding:14px 24px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:bold;
+}
+
+.note{
+    color:#666;
+    margin-top:20px;
+    line-height:1.6;
+}
+
+@media(max-width:700px){
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .header h1{
+        font-size:30px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>🏆 THÀNH TÍCH CỦA BÉ</h1>
+    <p>Theo dõi quá trình luyện cờ vua</p>
+</div>
+
+<div class="container">
+
+    <h2>Bảng thành tích</h2>
+
+    <div class="grid">
+
+        <div class="card">
+            <h2 id="score">0</h2>
+            <p>Tổng điểm</p>
+        </div>
+
+        <div class="card">
+            <h2 id="questions">0</h2>
+            <p>Số bài đã làm</p>
+        </div>
+
+        <div class="card">
+            <h2 id="correct">0</h2>
+            <p>Số câu đúng</p>
+        </div>
+
+        <div class="card">
+            <h2 id="games">0</h2>
+            <p>Số ván đã chơi</p>
+        </div>
+
+    </div>
+
+    <p class="note">
+        Điểm sẽ được lưu trên trình duyệt đang sử dụng.<br>
+        Nếu đổi máy hoặc xóa dữ liệu trình duyệt thì điểm có thể bị mất.
+    </p>
+
+    <button onclick="resetStats()">XÓA THÀNH TÍCH</button>
+
+    <br>
+
+    <a class="back" href="index.html">← Về trang chủ</a>
+
+</div>
+
+<script>
+function getNumber(key){
+    return Number(localStorage.getItem(key) || 0);
+}
+
+function loadStats(){
+    document.getElementById("score").innerText = getNumber("chess_score");
+    document.getElementById("questions").innerText = getNumber("chess_questions");
+    document.getElementById("correct").innerText = getNumber("chess_correct");
+    document.getElementById("games").innerText = getNumber("chess_games");
+}
+
+function resetStats(){
+    if(confirm("Bạn có chắc muốn xóa toàn bộ thành tích không?")){
+        localStorage.removeItem("chess_score");
+        localStorage.removeItem("chess_questions");
+        localStorage.removeItem("chess_correct");
+        localStorage.removeItem("chess_games");
+        loadStats();
+    }
+}
+
+loadStats();
+</script>
+
+</body>
+</html>
