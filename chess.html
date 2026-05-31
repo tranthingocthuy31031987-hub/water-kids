@@ -2,47 +2,298 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Bàn cờ vua Water</title>
+<title>Cờ vua Water</title>
+
+<link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+
 <style>
-body{font-family:Arial;margin:0;background:#f5f5f5;text-align:center}
-h1{background:#1976d2;color:white;padding:25px;margin:0}
-.board{margin:35px auto;width:480px;height:480px;display:grid;grid-template-columns:repeat(8,1fr);border:3px solid #333}
-.cell{display:flex;justify-content:center;align-items:center;font-size:40px}
-.white{background:#f0d9b5}
-.black{background:#b58863}
-a{display:block;margin:25px;color:#1976d2;font-weight:bold;text-decoration:none}
+body{
+    font-family: Arial, sans-serif;
+    background:#f4f6f9;
+    margin:0;
+    text-align:center;
+}
+
+.header{
+    background:#1976d2;
+    color:white;
+    padding:25px;
+}
+
+.header h1{
+    margin:0;
+}
+
+.container{
+    max-width:900px;
+    margin:30px auto;
+    background:white;
+    padding:25px;
+    border-radius:16px;
+    box-shadow:0 0 15px rgba(0,0,0,0.15);
+}
+
+#board{
+    width:480px;
+    margin:20px auto;
+}
+
+.controls{
+    margin:20px;
+}
+
+button, select{
+    padding:12px 18px;
+    margin:8px;
+    border-radius:8px;
+    border:none;
+    font-size:16px;
+}
+
+button{
+    background:#43a047;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#2e7d32;
+}
+
+select{
+    border:1px solid #ccc;
+}
+
+.status{
+    font-size:18px;
+    font-weight:bold;
+    color:#d32f2f;
+    margin-top:15px;
+}
+
+.back{
+    display:inline-block;
+    margin-top:20px;
+    text-decoration:none;
+    color:#1976d2;
+    font-weight:bold;
+}
+
+.note{
+    color:#666;
+    font-size:14px;
+}
 </style>
 </head>
+
 <body>
 
-<h1>♟️ BÀN CỜ VUA WATER</h1>
+<div class="header">
+<h1>♟️ CỜ VUA WATER</h1>
+<p>Chơi cờ vua với máy theo cấp độ</p>
+</div>
 
-<div class="board" id="board"></div>
+<div class="container">
 
-<a href="index.html">← Về trang chủ</a>
+<div class="controls">
+<label><b>Chọn cấp độ:</b></label>
+
+<select id="level">
+    <option value="easy">Dễ</option>
+    <option value="medium">Trung bình</option>
+    <option value="hard">Khó</option>
+</select>
+
+<button onclick="newGame()">VÁN MỚI</button>
+</div>
+
+<div id="board"></div>
+
+<div class="status" id="status">
+Lượt của bạn: quân trắng
+</div>
+
+<p class="note">
+Bạn cầm quân trắng. Kéo quân để đi. Máy sẽ tự đi quân đen.
+</p>
+
+<a class="back" href="index.html">← Về trang chủ</a>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
 
 <script>
-const pieces = [
-["♜","♞","♝","♛","♚","♝","♞","♜"],
-["♟","♟","♟","♟","♟","♟","♟","♟"],
-["","","","","","","",""],
-["","","","","","","",""],
-["","","","","","","",""],
-["","","","","","","",""],
-["♙","♙","♙","♙","♙","♙","♙","♙"],
-["♖","♘","♗","♕","♔","♗","♘","♖"]
-];
+let board = null;
+let game = new Chess();
 
-const board = document.getElementById("board");
+function onDragStart(source, piece) {
+    if (game.game_over()) return false;
 
-for(let r=0;r<8;r++){
-  for(let c=0;c<8;c++){
-    const cell=document.createElement("div");
-    cell.className="cell " + ((r+c)%2==0 ? "white":"black");
-    cell.innerHTML=pieces[r][c];
-    board.appendChild(cell);
-  }
+    // Chỉ cho người chơi cầm quân trắng
+    if (piece.search(/^b/) !== -1) return false;
 }
+
+function onDrop(source, target) {
+    let move = game.move({
+        from: source,
+        to: target,
+        promotion: "q"
+    });
+
+    // Nếu đi sai luật thì quân quay về vị trí cũ
+    if (move === null) return "snapback";
+
+    updateStatus();
+
+    // Máy đi sau 0.5 giây
+    window.setTimeout(makeComputerMove, 500);
+}
+
+function onSnapEnd() {
+    board.position(game.fen());
+}
+
+function makeComputerMove() {
+    if (game.game_over()) {
+        updateStatus();
+        return;
+    }
+
+    let level = document.getElementById("level").value;
+    let move;
+
+    if (level === "easy") {
+        move = getRandomMove();
+    }
+
+    if (level === "medium") {
+        move = getCaptureMove() || getRandomMove();
+    }
+
+    if (level === "hard") {
+        move = getBestSimpleMove();
+    }
+
+    game.move(move);
+    board.position(game.fen());
+    updateStatus();
+}
+
+function getRandomMove() {
+    let moves = game.moves();
+    return moves[Math.floor(Math.random() * moves.length)];
+}
+
+function getCaptureMove() {
+    let moves = game.moves({ verbose: true });
+    let captures = moves.filter(m => m.captured);
+
+    if (captures.length > 0) {
+        return captures[Math.floor(Math.random() * captures.length)];
+    }
+
+    return null;
+}
+
+function getBestSimpleMove() {
+    let moves = game.moves({ verbose: true });
+    let bestMove = null;
+    let bestValue = -9999;
+
+    for (let i = 0; i < moves.length; i++) {
+        let move = moves[i];
+        game.move(move);
+
+        let value = evaluateBoard();
+
+        game.undo();
+
+        // Máy là quân đen nên chọn nước làm điểm thấp cho trắng
+        value = -value;
+
+        if (value > bestValue) {
+            bestValue = value;
+            bestMove = move;
+        }
+    }
+
+    return bestMove || getRandomMove();
+}
+
+function evaluateBoard() {
+    let boardArray = game.board();
+    let value = 0;
+
+    const values = {
+        p: 10,
+        n: 30,
+        b: 30,
+        r: 50,
+        q: 90,
+        k: 900
+    };
+
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            let piece = boardArray[r][c];
+
+            if (piece) {
+                let pieceValue = values[piece.type];
+
+                if (piece.color === "w") {
+                    value += pieceValue;
+                } else {
+                    value -= pieceValue;
+                }
+            }
+        }
+    }
+
+    return value;
+}
+
+function updateStatus() {
+    let status = "";
+
+    if (game.in_checkmate()) {
+        status = "♛ Chiếu hết! Ván cờ kết thúc.";
+    } else if (game.in_draw()) {
+        status = "🤝 Hòa cờ.";
+    } else {
+        if (game.turn() === "w") {
+            status = "Lượt của bạn: quân trắng";
+        } else {
+            status = "Máy đang suy nghĩ...";
+        }
+
+        if (game.in_check()) {
+            status += " - Đang bị chiếu!";
+        }
+    }
+
+    document.getElementById("status").innerText = status;
+}
+
+function newGame() {
+    game = new Chess();
+    board.start();
+    updateStatus();
+}
+
+board = Chessboard("board", {
+    draggable: true,
+    position: "start",
+    pieceTheme: "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png",
+    onDragStart: onDragStart,
+    onDrop: onDrop,
+    onSnapEnd: onSnapEnd
+});
+
+updateStatus();
 </script>
 
 </body>
