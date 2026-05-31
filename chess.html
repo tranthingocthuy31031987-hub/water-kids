@@ -2,22 +2,26 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Cờ vua Water - Chơi với máy</title>
+<title>Cờ vua Water - Luyện chơi với máy</title>
 
 <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
 
 <style>
+*{box-sizing:border-box}
+
 body{
-    font-family: Arial, sans-serif;
-    background:#f4f6f9;
+    font-family:Arial, sans-serif;
+    background:linear-gradient(180deg,#eaf3ff 0%,#f8fbff 100%);
     margin:0;
     text-align:center;
+    color:#222;
 }
 
 .header{
-    background:#1976d2;
+    background:linear-gradient(135deg,#1976d2,#0d47a1);
     color:white;
-    padding:25px;
+    padding:28px 20px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.18);
 }
 
 .header h1{
@@ -26,69 +30,111 @@ body{
 }
 
 .container{
-    max-width:1000px;
+    max-width:1100px;
     margin:30px auto;
     background:white;
-    padding:30px;
-    border-radius:18px;
-    box-shadow:0 0 18px rgba(0,0,0,0.15);
-}
-
-#board{
-    width:620px;
-    margin:25px auto;
+    padding:28px;
+    border-radius:20px;
+    box-shadow:0 10px 28px rgba(0,0,0,0.14);
 }
 
 .controls{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
     margin-bottom:20px;
 }
 
-button, select{
+select, button{
     padding:12px 18px;
-    margin:8px;
-    border-radius:8px;
+    border-radius:10px;
     border:none;
     font-size:16px;
 }
 
+select{
+    border:1px solid #ccc;
+    background:white;
+}
+
 button{
-    background:#43a047;
     color:white;
     font-weight:bold;
     cursor:pointer;
 }
 
-button:hover{
-    background:#2e7d32;
+.green{background:#43a047}
+.green:hover{background:#2e7d32}
+
+.blue{background:#1976d2}
+.blue:hover{background:#0d47a1}
+
+.orange{background:#fb8c00}
+.orange:hover{background:#ef6c00}
+
+.purple{background:#5e35b1}
+.purple:hover{background:#4527a0}
+
+#board{
+    width:min(78vw,680px);
+    margin:25px auto;
+    box-shadow:0 8px 20px rgba(0,0,0,0.2);
 }
 
-select{
-    border:1px solid #ccc;
+.status-box{
+    max-width:760px;
+    margin:18px auto;
+    padding:18px;
+    background:#f7fbff;
+    border:2px solid #d6e8ff;
+    border-radius:14px;
 }
 
 #status{
     font-size:22px;
     font-weight:bold;
     color:#d32f2f;
-    margin-top:20px;
+}
+
+#lesson{
+    margin-top:12px;
+    color:#444;
+    font-size:17px;
+    line-height:1.5;
+}
+
+.score{
+    font-size:22px;
+    color:#0d47a1;
+    font-weight:bold;
+    margin:12px 0;
 }
 
 .back{
     display:inline-block;
     margin-top:20px;
     text-decoration:none;
-    color:#1976d2;
+    color:white;
+    background:#5e35b1;
+    padding:13px 22px;
+    border-radius:10px;
     font-weight:bold;
 }
 
-@media(max-width:700px){
-    #board{
-        width:92vw;
-    }
+.note{
+    color:#666;
+    font-size:15px;
+    line-height:1.6;
+}
 
-    .header h1{
-        font-size:30px;
-    }
+@media(max-width:700px){
+    .header h1{font-size:30px}
+    .container{margin:18px 10px;padding:18px 10px}
+    .controls{flex-direction:column}
+    select, button{width:90%;max-width:320px}
+    #status{font-size:18px}
 }
 </style>
 </head>
@@ -96,8 +142,8 @@ select{
 <body>
 
 <div class="header">
-    <h1>♟️ CỜ VUA WATER</h1>
-    <p>Chơi cờ vua với máy theo cấp độ</p>
+    <h1>🤖 LUYỆN CHƠI CỜ VUA VỚI MÁY</h1>
+    <p>Chơi - nhận gợi ý - rút bài học sau mỗi nước</p>
 </div>
 
 <div class="container">
@@ -111,16 +157,25 @@ select{
             <option value="hard">Khó</option>
         </select>
 
-        <button onclick="newGame()">VÁN MỚI</button>
-        <button onclick="flipBoard()">ĐỔI CHIỀU BÀN CỜ</button>
+        <button class="green" onclick="newGame()">VÁN MỚI</button>
+        <button class="orange" onclick="showHint()">💡 GỢI Ý</button>
+        <button class="blue" onclick="flipBoard()">ĐỔI CHIỀU BÀN CỜ</button>
+    </div>
+
+    <div class="score">
+        Điểm ván này: <span id="gameScore">0</span>
     </div>
 
     <div id="board"></div>
 
-    <div id="status">Lượt của bạn: quân trắng</div>
+    <div class="status-box">
+        <div id="status">Lượt của bạn: quân trắng</div>
+        <div id="lesson">Bí kíp: Phát triển quân, bảo vệ Vua, kiểm soát trung tâm.</div>
+    </div>
 
-    <p>
-        Bạn cầm quân trắng. Kéo quân để đi. Máy sẽ tự đánh quân đen.
+    <p class="note">
+        Bạn cầm quân trắng. Kéo quân để đi. Máy sẽ tự đánh quân đen.<br>
+        Đi nước tốt, ăn quân, chiếu Vua hoặc chiếu hết sẽ được cộng điểm.
     </p>
 
     <a class="back" href="index.html">← Về trang chủ</a>
@@ -135,18 +190,48 @@ select{
 let board = null;
 let game = new Chess();
 let currentOrientation = "white";
+let gameScore = 0;
+let gameCounted = false;
+
+const pieceValues = {
+    p: 10,
+    n: 30,
+    b: 30,
+    r: 50,
+    q: 90,
+    k: 900
+};
+
+function getNumber(key){
+    return Number(localStorage.getItem(key) || 0);
+}
+
+function setNumber(key, value){
+    localStorage.setItem(key, String(value));
+}
+
+function addStat(key, amount){
+    setNumber(key, getNumber(key) + amount);
+}
+
+function addScore(points){
+    gameScore += points;
+    document.getElementById("gameScore").innerText = gameScore;
+}
+
+function setLesson(text){
+    document.getElementById("lesson").innerHTML = text;
+}
 
 function onDragStart(source, piece) {
     if (game.game_over()) return false;
-
-    // Người chơi chỉ cầm quân trắng
     if (piece.search(/^b/) !== -1) return false;
-
-    // Chỉ được kéo khi tới lượt trắng
     if (game.turn() !== "w") return false;
 }
 
 function onDrop(source, target) {
+    let beforeFen = game.fen();
+
     let move = game.move({
         from: source,
         to: target,
@@ -154,9 +239,11 @@ function onDrop(source, target) {
     });
 
     if (move === null) {
+        setLesson("❌ Nước đi chưa hợp lệ. Con hãy thử nước khác nhé.");
         return "snapback";
     }
 
+    evaluatePlayerMove(move, beforeFen);
     updateStatus();
 
     setTimeout(makeComputerMove, 600);
@@ -166,9 +253,47 @@ function onSnapEnd() {
     board.position(game.fen());
 }
 
+function evaluatePlayerMove(move, beforeFen){
+    let lesson = "";
+
+    addScore(2);
+    lesson = "✅ Nước đi hợp lệ. +2 điểm.";
+
+    if(move.captured){
+        let value = pieceValues[move.captured] || 0;
+        addScore(value);
+        lesson = "🎯 Tốt lắm! Con vừa ăn quân. +" + value + " điểm.";
+    }
+
+    if(game.in_check()){
+        addScore(15);
+        lesson += "<br>⚡ Hay lắm! Con đang chiếu Vua đối phương. +15 điểm.";
+    }
+
+    if(game.in_checkmate()){
+        addScore(100);
+        lesson = "🏆 Tuyệt vời! Con chiếu hết và thắng ván cờ. +100 điểm.";
+    }
+
+    if(!move.captured && !game.in_check()){
+        let tips = [
+            "Bài học: Trước mỗi nước đi, hãy nhìn xem quân mình có bị ăn không.",
+            "Bài học: Cố gắng đưa Mã và Tượng ra sớm trong khai cuộc.",
+            "Bài học: Đừng đưa Hậu ra quá sớm nếu chưa có kế hoạch.",
+            "Bài học: Kiểm soát trung tâm giúp quân hoạt động mạnh hơn.",
+            "Bài học: Quân không được bảo vệ là quân dễ bị mất."
+        ];
+
+        lesson += "<br>" + tips[Math.floor(Math.random() * tips.length)];
+    }
+
+    setLesson(lesson);
+}
+
 function makeComputerMove() {
     if (game.game_over()) {
         updateStatus();
+        countGameIfFinished();
         return;
     }
 
@@ -190,11 +315,19 @@ function makeComputerMove() {
     }
 
     if (move) {
-        game.move(move);
+        let computerMove = game.move(move);
+
+        if(computerMove && computerMove.captured){
+            let value = pieceValues[computerMove.captured] || 0;
+            addScore(-Math.floor(value / 2));
+            setLesson("⚠️ Máy vừa ăn quân của con. Con bị trừ " + Math.floor(value / 2) + " điểm. Nhớ bảo vệ quân nhé!");
+        }
+
         board.position(game.fen());
     }
 
     updateStatus();
+    countGameIfFinished();
 }
 
 function getRandomMove() {
@@ -226,6 +359,10 @@ function getBestSimpleMove() {
         let value = -evaluateBoard();
         game.undo();
 
+        if (move.captured) {
+            value += pieceValues[move.captured] || 0;
+        }
+
         if (value > bestValue) {
             bestValue = value;
             bestMove = move;
@@ -239,21 +376,12 @@ function evaluateBoard() {
     let boardArray = game.board();
     let value = 0;
 
-    const values = {
-        p: 10,
-        n: 30,
-        b: 30,
-        r: 50,
-        q: 90,
-        k: 900
-    };
-
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
             let piece = boardArray[r][c];
 
             if (piece) {
-                let pieceValue = values[piece.type];
+                let pieceValue = pieceValues[piece.type];
 
                 if (piece.color === "w") {
                     value += pieceValue;
@@ -267,17 +395,61 @@ function evaluateBoard() {
     return value;
 }
 
+function showHint(){
+    if(game.game_over()){
+        setLesson("Ván cờ đã kết thúc. Hãy bấm VÁN MỚI để chơi lại.");
+        return;
+    }
+
+    if(game.turn() !== "w"){
+        setLesson("Máy đang suy nghĩ. Chờ máy đi xong rồi con hãy xem gợi ý nhé.");
+        return;
+    }
+
+    let moves = game.moves({ verbose:true });
+
+    let checkingMoves = [];
+
+    for(let m of moves){
+        game.move(m);
+        if(game.in_check()){
+            checkingMoves.push(m);
+        }
+        game.undo();
+    }
+
+    let captures = moves.filter(m => m.captured);
+
+    if(checkingMoves.length > 0){
+        let m = checkingMoves[0];
+        setLesson("💡 Gợi ý: Có nước chiếu Vua. Hãy thử nhìn quân có thể đi từ <b>" + m.from + "</b> đến <b>" + m.to + "</b>.");
+        return;
+    }
+
+    if(captures.length > 0){
+        let m = captures[0];
+        setLesson("💡 Gợi ý: Có thể ăn quân đối phương. Hãy xem nước từ <b>" + m.from + "</b> đến <b>" + m.to + "</b>.");
+        return;
+    }
+
+    let random = moves[Math.floor(Math.random() * moves.length)];
+    setLesson("💡 Gợi ý: Hãy phát triển quân hoặc kiểm soát trung tâm. Có thể xem thử nước từ <b>" + random.from + "</b> đến <b>" + random.to + "</b>.");
+}
+
 function updateStatus() {
     let status = "";
 
     if (game.in_checkmate()) {
         if (game.turn() === "w") {
             status = "♛ Chiếu hết! Máy thắng.";
+            setLesson("Bài học: Hãy bảo vệ Vua tốt hơn và chú ý các nước chiếu của đối phương.");
         } else {
-            status = "🎉 Chiếu hết! Bạn thắng.";
+            status = "🎉 Chiếu hết! Con thắng.";
+            setLesson("🏆 Xuất sắc! Con đã chiếu hết. Hãy nhớ cách phối hợp quân để tấn công Vua.");
         }
     } else if (game.in_draw()) {
         status = "🤝 Ván cờ hòa.";
+        setLesson("Bài học: Hòa cũng là một kết quả tốt. Hãy xem lại đoạn nào có thể chơi mạnh hơn.");
     } else {
         if (game.turn() === "w") {
             status = "Lượt của bạn: quân trắng";
@@ -293,11 +465,26 @@ function updateStatus() {
     document.getElementById("status").innerText = status;
 }
 
+function countGameIfFinished(){
+    if(game.game_over() && !gameCounted){
+        gameCounted = true;
+        addStat("chess_games", 1);
+        addStat("chess_score", Math.max(0, gameScore));
+    }
+}
+
 function newGame() {
     game = new Chess();
+    gameScore = 0;
+    gameCounted = false;
+
+    document.getElementById("gameScore").innerText = gameScore;
+
     board.start();
     board.orientation(currentOrientation);
+
     updateStatus();
+    setLesson("Bí kíp: Phát triển quân, bảo vệ Vua, kiểm soát trung tâm.");
 }
 
 function flipBoard() {
