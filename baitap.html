@@ -26,7 +26,7 @@ body{
 
 .box{
     background:white;
-    max-width:760px;
+    max-width:820px;
     margin:35px auto;
     padding:35px;
     border-radius:18px;
@@ -43,6 +43,12 @@ body{
     font-size:22px;
     color:#d32f2f;
     font-weight:bold;
+}
+
+.progress{
+    color:#0d47a1;
+    font-weight:bold;
+    font-size:18px;
 }
 
 .answer{
@@ -71,11 +77,20 @@ body{
     background:#2e7d32;
 }
 
+.restart{
+    background:#fb8c00;
+}
+
+.restart:hover{
+    background:#ef6c00;
+}
+
 #result{
     font-size:22px;
     font-weight:bold;
-    min-height:35px;
+    min-height:45px;
     margin-top:22px;
+    line-height:1.5;
 }
 
 .back{
@@ -92,6 +107,7 @@ body{
 .small{
     color:#666;
     font-size:15px;
+    line-height:1.6;
 }
 
 @media(max-width:700px){
@@ -116,19 +132,19 @@ body{
 
 <div class="header">
     <h1>🎯 LUYỆN BÀI TẬP CỜ VUA</h1>
-    <p>Chọn đáp án đúng để ghi điểm</p>
+    <p>Mỗi lượt luyện gồm 10 câu bất kỳ trong kho 100 câu</p>
 </div>
 
 <div class="box">
 
-    <h2 id="questionTitle">Bài 1</h2>
+    <p class="progress" id="progress">Câu 1/10</p>
 
-    <p class="question" id="questionText">
-        Trắng đi trước. Hãy tìm nước chiếu hết trong 1 nước.
-    </p>
+    <h2 id="questionTitle">Bài tập</h2>
+
+    <p class="question" id="questionText"></p>
 
     <p class="score">
-        Điểm phiên này: <span id="sessionScore">0</span>
+        Điểm lượt này: <span id="sessionScore">0</span>
     </p>
 
     <button class="answer" id="btnA" onclick="checkAnswer('A')"></button>
@@ -141,8 +157,12 @@ body{
         CÂU TIẾP THEO
     </button>
 
+    <button class="answer restart" onclick="startNewSession()">
+        LUYỆN LẠI 10 CÂU MỚI
+    </button>
+
     <p class="small">
-        Trả lời đúng được +10 điểm. Điểm sẽ tự lưu vào trang Thành tích.
+        Trả lời đúng được +10 điểm. Điểm sẽ tự lưu vào trang Thành tích của bé.
     </p>
 
     <a class="back" href="index.html">← Về trang chủ</a>
@@ -153,63 +173,107 @@ body{
 let sessionScore = 0;
 let current = 0;
 let answered = false;
+let selectedQuestions = [];
 
-const questions = [
-    {
-        title:"Bài 1",
-        text:"Trắng đi trước. Hãy tìm nước chiếu hết trong 1 nước.",
-        answers:{
-            A:"A. Hậu h5#",
-            B:"B. Xe a8",
-            C:"C. Mã f7"
-        },
-        correct:"A",
-        lesson:"Chiếu hết là mục tiêu quan trọng hơn ăn quân."
-    },
-    {
-        title:"Bài 2",
-        text:"Quân Mã đi theo hình gì?",
-        answers:{
-            A:"A. Đi thẳng",
-            B:"B. Đi chéo",
-            C:"C. Đi hình chữ L"
-        },
-        correct:"C",
-        lesson:"Quân Mã đặc biệt vì có thể nhảy qua quân khác."
-    },
-    {
-        title:"Bài 3",
-        text:"Quân Xe đi như thế nào?",
-        answers:{
-            A:"A. Đi ngang và dọc",
-            B:"B. Đi chéo",
-            C:"C. Đi hình chữ L"
-        },
-        correct:"A",
-        lesson:"Xe rất mạnh ở hàng ngang và cột dọc mở."
-    },
-    {
-        title:"Bài 4",
-        text:"Trong khai cuộc, việc nào thường nên làm sớm?",
-        answers:{
-            A:"A. Đưa Hậu ra thật sớm",
-            B:"B. Phát triển Mã, Tượng và nhập thành",
-            C:"C. Đi một quân nhiều lần"
-        },
-        correct:"B",
-        lesson:"Khai cuộc tốt là phát triển quân và bảo vệ Vua."
-    },
-    {
-        title:"Bài 5",
-        text:"Trước khi đi một nước, con nên tự hỏi điều gì?",
-        answers:{
-            A:"A. Quân mình có đang bị ăn không?",
-            B:"B. Đi nước nào cho nhanh nhất?",
-            C:"C. Có nên bỏ Vua không?"
-        },
-        correct:"A",
-        lesson:"Luôn kiểm tra quân mình có bị đối phương tấn công không."
-    }
+const questionBank = [
+{q:"Quân Mã đi theo hình gì?",a:{A:"A. Đi thẳng",B:"B. Đi chéo",C:"C. Đi hình chữ L"},c:"C",l:"Quân Mã đi hình chữ L và có thể nhảy qua quân khác."},
+{q:"Quân Xe đi như thế nào?",a:{A:"A. Ngang và dọc",B:"B. Chéo",C:"C. Hình chữ L"},c:"A",l:"Xe rất mạnh trên hàng ngang và cột dọc mở."},
+{q:"Quân Tượng đi như thế nào?",a:{A:"A. Đi chéo",B:"B. Đi ngang",C:"C. Đi như Mã"},c:"A",l:"Tượng đi chéo và luôn ở cùng màu ô."},
+{q:"Quân Hậu đi như thế nào?",a:{A:"A. Chỉ đi chéo",B:"B. Ngang, dọc và chéo",C:"C. Chỉ đi một ô"},c:"B",l:"Hậu là quân mạnh nhất vì kết hợp sức mạnh của Xe và Tượng."},
+{q:"Quân Vua đi tối đa mấy ô mỗi nước?",a:{A:"A. Một ô",B:"B. Hai ô",C:"C. Bao nhiêu cũng được"},c:"A",l:"Vua đi một ô nhưng là quân quan trọng nhất."},
+{q:"Quân Tốt đi thẳng hay đi chéo khi ăn quân?",a:{A:"A. Đi thẳng, ăn thẳng",B:"B. Đi thẳng, ăn chéo",C:"C. Đi chéo, ăn thẳng"},c:"B",l:"Tốt đi thẳng nhưng ăn chéo."},
+{q:"Khi Vua bị chiếu, việc đầu tiên là gì?",a:{A:"A. Phải xử lý nước chiếu",B:"B. Có thể bỏ qua",C:"C. Ăn quân khác"},c:"A",l:"Khi bị chiếu, phải cứu Vua ngay."},
+{q:"Mục tiêu cuối cùng của cờ vua là gì?",a:{A:"A. Ăn hết quân",B:"B. Chiếu hết Vua đối phương",C:"C. Đổi Hậu"},c:"B",l:"Chiếu hết mới là mục tiêu cuối cùng."},
+{q:"Trong khai cuộc, nên làm gì sớm?",a:{A:"A. Phát triển Mã, Tượng và nhập thành",B:"B. Đưa Hậu ra sớm",C:"C. Đi một quân nhiều lần"},c:"A",l:"Khai cuộc tốt là phát triển quân và bảo vệ Vua."},
+{q:"Không nên đưa quân nào ra quá sớm trong khai cuộc?",a:{A:"A. Hậu",B:"B. Tốt",C:"C. Mã"},c:"A",l:"Đưa Hậu ra sớm dễ bị đối phương đuổi mất thời gian."},
+
+{q:"Nhập thành giúp điều gì?",a:{A:"A. Bảo vệ Vua",B:"B. Mất quyền đi",C:"C. Bắt buộc đổi Hậu"},c:"A",l:"Nhập thành giúp Vua an toàn và đưa Xe vào cuộc."},
+{q:"Trung tâm bàn cờ gồm các ô nào quan trọng?",a:{A:"A. a1, h8",B:"B. d4, e4, d5, e5",C:"C. a8, h1"},c:"B",l:"Kiểm soát trung tâm giúp quân hoạt động mạnh hơn."},
+{q:"Quân nào có thể nhảy qua quân khác?",a:{A:"A. Mã",B:"B. Tượng",C:"C. Xe"},c:"A",l:"Mã là quân duy nhất có thể nhảy qua quân khác."},
+{q:"Quân nào mạnh nhất trên bàn cờ?",a:{A:"A. Hậu",B:"B. Tốt",C:"C. Mã"},c:"A",l:"Hậu có sức mạnh lớn nhất vì đi ngang, dọc, chéo."},
+{q:"Nếu hơn quân, chiến thuật thường tốt là gì?",a:{A:"A. Đổi bớt quân",B:"B. Bỏ quân",C:"C. Không cần bảo vệ Vua"},c:"A",l:"Khi hơn quân, đổi quân giúp đơn giản hóa và dễ thắng hơn."},
+{q:"Quân bị treo là gì?",a:{A:"A. Quân không được bảo vệ",B:"B. Quân đã ăn được Hậu",C:"C. Quân ở hàng cuối"},c:"A",l:"Quân không được bảo vệ rất dễ bị mất."},
+{q:"Trước khi đi một nước, nên hỏi gì?",a:{A:"A. Quân mình có bị ăn không?",B:"B. Có đi thật nhanh được không?",C:"C. Có cần nhìn bàn cờ không?"},c:"A",l:"Luôn kiểm tra mối đe dọa của đối phương trước khi đi."},
+{q:"Chiếu đôi thường liên quan nhiều đến quân nào?",a:{A:"A. Mã",B:"B. Tốt",C:"C. Vua"},c:"A",l:"Mã rất hay tạo đòn chiếu đôi."},
+{q:"Đòn ghim là gì?",a:{A:"A. Quân bị giữ vì phía sau là quân quan trọng",B:"B. Quân được đi tự do",C:"C. Quân phong Hậu"},c:"A",l:"Đòn ghim khiến quân đối phương khó di chuyển."},
+{q:"Đòn xiên là gì?",a:{A:"A. Tấn công quân mạnh phía trước và quân yếu phía sau",B:"B. Nhập thành",C:"C. Đi Tốt hai ô"},c:"A",l:"Đòn xiên là một chiến thuật tấn công theo đường thẳng hoặc chéo."},
+
+{q:"Khi Tốt đi đến hàng cuối, nó có thể làm gì?",a:{A:"A. Phong cấp",B:"B. Biến mất",C:"C. Quay lại đầu"},c:"A",l:"Tốt đến hàng cuối có thể phong Hậu, Xe, Tượng hoặc Mã."},
+{q:"Thông thường nên phong Tốt thành quân nào?",a:{A:"A. Hậu",B:"B. Vua",C:"C. Tốt"},c:"A",l:"Phong Hậu thường mạnh nhất."},
+{q:"Hai Vua có được đứng sát nhau không?",a:{A:"A. Không",B:"B. Có",C:"C. Chỉ khi tàn cuộc"},c:"A",l:"Hai Vua không được đứng cạnh nhau vì sẽ chiếu nhau."},
+{q:"Nếu không còn nước đi hợp lệ và không bị chiếu thì gọi là gì?",a:{A:"A. Hòa pat",B:"B. Chiếu hết",C:"C. Phong cấp"},c:"A",l:"Pat là một dạng hòa cờ."},
+{q:"Khi bị mất Hậu, con nên làm gì?",a:{A:"A. Bình tĩnh tìm cách phòng thủ và phản công",B:"B. Bỏ cuộc ngay",C:"C. Đi Vua vào giữa bàn"},c:"A",l:"Cờ vua rèn bình tĩnh, kể cả khi bị bất lợi."},
+{q:"Quân Xe thường mạnh hơn khi nào?",a:{A:"A. Ở cột mở",B:"B. Bị kẹt sau Tốt",C:"C. Ở góc không hoạt động"},c:"A",l:"Xe mạnh khi kiểm soát cột mở."},
+{q:"Tượng mạnh khi nào?",a:{A:"A. Đường chéo mở",B:"B. Bị Tốt chặn",C:"C. Không có ô đi"},c:"A",l:"Tượng cần đường chéo mở để hoạt động tốt."},
+{q:"Mã mạnh ở đâu?",a:{A:"A. Trung tâm",B:"B. Góc bàn",C:"C. Ngoài bàn"},c:"A",l:"Mã ở trung tâm kiểm soát nhiều ô."},
+{q:"Câu nói hay nhớ: Mã ở rìa bàn thì thế nào?",a:{A:"A. Thường yếu hơn",B:"B. Luôn mạnh nhất",C:"C. Không thể bị ăn"},c:"A",l:"Mã ở rìa bàn kiểm soát ít ô hơn."},
+{q:"Khi tấn công Vua, nên làm gì?",a:{A:"A. Đưa thêm quân tham gia",B:"B. Chỉ dùng một quân",C:"C. Bỏ Vua của mình"},c:"A",l:"Tấn công mạnh cần phối hợp nhiều quân."},
+
+{q:"Khi khai cuộc, nên ưu tiên quân nào ra trước?",a:{A:"A. Mã và Tượng",B:"B. Hậu và Xe",C:"C. Vua đi ra giữa"},c:"A",l:"Mã và Tượng ra sớm giúp phát triển lực lượng."},
+{q:"Nếu quân mình bị tấn công, có mấy cách xử lý cơ bản?",a:{A:"A. Chạy, bảo vệ, ăn lại",B:"B. Bỏ qua",C:"C. Đổi Vua"},c:"A",l:"Khi bị tấn công, hãy nghĩ: chạy, bảo vệ hoặc ăn quân tấn công."},
+{q:"Khi thấy đối phương vừa đi một nước, con nên hỏi gì?",a:{A:"A. Nước đó dọa gì?",B:"B. Có đẹp không?",C:"C. Có nhanh không?"},c:"A",l:"Luôn tìm ý đồ của đối phương."},
+{q:"Khi có cơ hội chiếu hết, nên ưu tiên gì?",a:{A:"A. Chiếu hết",B:"B. Ăn Tốt",C:"C. Đi Hậu lòng vòng"},c:"A",l:"Chiếu hết kết thúc ván cờ, quan trọng hơn ăn quân."},
+{q:"Quân Tốt có thể đi hai ô khi nào?",a:{A:"A. Ở nước đi đầu tiên của Tốt",B:"B. Lúc nào cũng được",C:"C. Khi đã qua sông"},c:"A",l:"Tốt chỉ có thể đi hai ô từ vị trí ban đầu."},
+{q:"Quân Tốt có đi lùi được không?",a:{A:"A. Không",B:"B. Có",C:"C. Chỉ khi bị chiếu"},c:"A",l:"Tốt chỉ tiến về phía trước."},
+{q:"Quân Xe có đi chéo không?",a:{A:"A. Không",B:"B. Có",C:"C. Chỉ khi nhập thành"},c:"A",l:"Xe chỉ đi ngang và dọc."},
+{q:"Quân Tượng có đi thẳng không?",a:{A:"A. Không",B:"B. Có",C:"C. Chỉ khi ăn quân"},c:"A",l:"Tượng chỉ đi chéo."},
+{q:"Quân Hậu có thể đi như Xe không?",a:{A:"A. Có",B:"B. Không",C:"C. Chỉ một ô"},c:"A",l:"Hậu có thể đi ngang và dọc như Xe."},
+{q:"Quân Hậu có thể đi như Tượng không?",a:{A:"A. Có",B:"B. Không",C:"C. Chỉ khi chiếu"},c:"A",l:"Hậu cũng có thể đi chéo như Tượng."},
+
+{q:"Chiếu là gì?",a:{A:"A. Vua đang bị tấn công",B:"B. Tốt phong cấp",C:"C. Xe bị ăn"},c:"A",l:"Chiếu nghĩa là Vua đang bị đe dọa."},
+{q:"Chiếu hết là gì?",a:{A:"A. Vua bị chiếu và không còn cách cứu",B:"B. Hòa cờ",C:"C. Ăn được Tốt"},c:"A",l:"Chiếu hết là kết thúc ván cờ."},
+{q:"Có thể tự đi vào ô bị chiếu không?",a:{A:"A. Không",B:"B. Có",C:"C. Chỉ khi hơn quân"},c:"A",l:"Vua không được đi vào ô đang bị đối phương kiểm soát."},
+{q:"Khi nhập thành, Vua và quân nào cùng di chuyển?",a:{A:"A. Xe",B:"B. Hậu",C:"C. Tượng"},c:"A",l:"Nhập thành là nước đi đặc biệt của Vua và Xe."},
+{q:"Nhập thành có được nếu Vua đang bị chiếu không?",a:{A:"A. Không",B:"B. Có",C:"C. Luôn được"},c:"A",l:"Không được nhập thành khi Vua đang bị chiếu."},
+{q:"Khi đổi quân, con nên đổi khi nào?",a:{A:"A. Khi có lợi hoặc đang hơn quân",B:"B. Luôn đổi mọi quân",C:"C. Không bao giờ đổi"},c:"A",l:"Đổi quân cần tính lợi hại."},
+{q:"Ăn Hậu đối phương thường là điều gì?",a:{A:"A. Rất có lợi",B:"B. Luôn thua",C:"C. Không quan trọng"},c:"A",l:"Hậu là quân rất mạnh, ăn được Hậu thường là lợi lớn."},
+{q:"Nếu ăn quân nhỏ nhưng mất Hậu thì sao?",a:{A:"A. Thường là không tốt",B:"B. Luôn tốt",C:"C. Không ảnh hưởng"},c:"A",l:"Không nên ham ăn quân nhỏ mà mất quân lớn."},
+{q:"Khi bị chiếu, cách nào có thể cứu Vua?",a:{A:"A. Chạy Vua, bắt quân chiếu, hoặc che chắn",B:"B. Bỏ qua",C:"C. Phong Tốt"},c:"A",l:"Có ba cách phổ biến để thoát chiếu."},
+{q:"Một quân được bảo vệ nghĩa là gì?",a:{A:"A. Nếu bị ăn thì quân khác có thể ăn lại",B:"B. Không bao giờ bị ăn",C:"C. Được đặt ở góc"},c:"A",l:"Quân được bảo vệ giúp giảm nguy cơ mất quân miễn phí."},
+
+{q:"Khi bắt đầu ván cờ, quân trắng hay đen đi trước?",a:{A:"A. Trắng",B:"B. Đen",C:"C. Ai thích thì đi"},c:"A",l:"Trong cờ vua, bên trắng đi trước."},
+{q:"Hàng ngang trong cờ vua gọi là gì?",a:{A:"A. Rank",B:"B. File",C:"C. Diagonal"},c:"A",l:"Hàng ngang gọi là rank."},
+{q:"Cột dọc trong cờ vua gọi là gì?",a:{A:"A. File",B:"B. Rank",C:"C. Fork"},c:"A",l:"Cột dọc gọi là file."},
+{q:"Đường chéo trong cờ vua gọi là gì?",a:{A:"A. Diagonal",B:"B. File",C:"C. Rank"},c:"A",l:"Đường chéo gọi là diagonal."},
+{q:"Fork là chiến thuật gì?",a:{A:"A. Một quân tấn công hai mục tiêu",B:"B. Nhập thành",C:"C. Hòa cờ"},c:"A",l:"Fork là đòn tấn công đôi."},
+{q:"Pin là chiến thuật gì?",a:{A:"A. Ghim quân",B:"B. Phong cấp",C:"C. Đi Tốt"},c:"A",l:"Pin là đòn ghim."},
+{q:"Skewer là chiến thuật gì?",a:{A:"A. Đòn xiên",B:"B. Nhập thành",C:"C. Hòa pat"},c:"A",l:"Skewer là đòn xiên."},
+{q:"Discovery attack là gì?",a:{A:"A. Tấn công mở",B:"B. Ăn Tốt",C:"C. Đi Vua"},c:"A",l:"Tấn công mở xảy ra khi một quân di chuyển để mở đường cho quân khác tấn công."},
+{q:"Double check là gì?",a:{A:"A. Chiếu đôi",B:"B. Hòa",C:"C. Nhập thành"},c:"A",l:"Chiếu đôi là khi Vua bị hai quân cùng chiếu."},
+{q:"Khi bị chiếu đôi, thường phải làm gì?",a:{A:"A. Di chuyển Vua",B:"B. Chỉ cần che một đường",C:"C. Bỏ qua"},c:"A",l:"Chiếu đôi thường rất nguy hiểm, đa số phải chạy Vua."},
+
+{q:"Khi có Tốt thông, nên làm gì?",a:{A:"A. Đẩy lên phong cấp nếu an toàn",B:"B. Bỏ Tốt",C:"C. Đi Vua vào góc"},c:"A",l:"Tốt thông rất nguy hiểm trong tàn cuộc."},
+{q:"Vua trong tàn cuộc nên làm gì?",a:{A:"A. Tham gia hỗ trợ Tốt",B:"B. Luôn trốn trong góc",C:"C. Không được di chuyển"},c:"A",l:"Trong tàn cuộc, Vua trở thành quân chiến đấu mạnh."},
+{q:"Khi hơn Xe, nên làm gì?",a:{A:"A. Đổi quân và đưa về thế thắng đơn giản",B:"B. Bỏ Xe",C:"C. Không bảo vệ Vua"},c:"A",l:"Khi hơn quân lớn, hãy đơn giản hóa ván cờ."},
+{q:"Khi bị kém quân, nên làm gì?",a:{A:"A. Tìm phản công hoặc bẫy",B:"B. Bỏ cuộc ngay",C:"C. Đi ngẫu nhiên"},c:"A",l:"Kém quân vẫn có thể tìm chiến thuật phản công."},
+{q:"Khi thấy nước chiếu, có nên luôn đi chiếu không?",a:{A:"A. Không, phải xem có lợi không",B:"B. Luôn luôn",C:"C. Không bao giờ"},c:"A",l:"Không phải nước chiếu nào cũng là nước tốt nhất."},
+{q:"Nước đi tốt thường là nước như thế nào?",a:{A:"A. Vừa bảo vệ mình vừa tạo đe dọa",B:"B. Chỉ đi cho nhanh",C:"C. Bỏ quân"},c:"A",l:"Nước tốt thường có mục tiêu rõ ràng."},
+{q:"Khi khai cuộc, đi Tốt nào thường giúp kiểm soát trung tâm?",a:{A:"A. Tốt d hoặc e",B:"B. Tốt a hoặc h",C:"C. Tốt chỉ đi lùi"},c:"A",l:"Tốt d và e kiểm soát trung tâm rất tốt."},
+{q:"Nếu Hậu bị quân nhỏ đuổi nhiều lần thì sao?",a:{A:"A. Mất thời gian phát triển",B:"B. Luôn thắng ngay",C:"C. Không ảnh hưởng"},c:"A",l:"Đưa Hậu ra sớm dễ bị đuổi và mất nhịp."},
+{q:"Quân nào thường bảo vệ Vua sau nhập thành?",a:{A:"A. Các Tốt trước mặt Vua",B:"B. Hậu đối phương",C:"C. Quân bị ăn"},c:"A",l:"Các Tốt trước mặt Vua là lá chắn quan trọng."},
+{q:"Có nên đẩy hết Tốt trước mặt Vua không?",a:{A:"A. Không nên nếu không cần thiết",B:"B. Luôn nên",C:"C. Bắt buộc"},c:"A",l:"Đẩy Tốt trước Vua có thể làm Vua yếu."},
+
+{q:"Một nước đi có kế hoạch nghĩa là gì?",a:{A:"A. Có mục tiêu rõ ràng",B:"B. Đi cho đẹp",C:"C. Đi thật nhanh"},c:"A",l:"Mỗi nước nên có mục tiêu."},
+{q:"Khi đối phương tấn công cánh Vua, con nên làm gì?",a:{A:"A. Kiểm tra phòng thủ và phản công",B:"B. Không nhìn",C:"C. Bỏ Vua"},c:"A",l:"Phải nhìn mối đe dọa và tìm cách hóa giải."},
+{q:"Khi con hơn Hậu, điều gì cần tránh?",a:{A:"A. Bị chiếu hết bất ngờ",B:"B. Đổi quân hợp lý",C:"C. Bảo vệ Vua"},c:"A",l:"Hơn quân vẫn có thể thua nếu Vua yếu."},
+{q:"Khi đối phương có quân không được bảo vệ, con nên làm gì?",a:{A:"A. Xem có thể tấn công không",B:"B. Không quan tâm",C:"C. Bỏ Hậu"},c:"A",l:"Quân không được bảo vệ là mục tiêu tốt."},
+{q:"Mục tiêu của khai cuộc là gì?",a:{A:"A. Phát triển quân, kiểm soát trung tâm, an toàn Vua",B:"B. Ăn thật nhiều Tốt",C:"C. Chỉ đi Hậu"},c:"A",l:"Ba mục tiêu khai cuộc rất quan trọng."},
+{q:"Mục tiêu của trung cuộc là gì?",a:{A:"A. Tạo kế hoạch và chiến thuật",B:"B. Không cần tính toán",C:"C. Chỉ đi Vua"},c:"A",l:"Trung cuộc là lúc chiến thuật và kế hoạch rất quan trọng."},
+{q:"Mục tiêu của tàn cuộc là gì?",a:{A:"A. Phong Tốt và chiếu hết",B:"B. Bỏ hết quân",C:"C. Không cần Vua"},c:"A",l:"Tàn cuộc cần biết dùng Vua và Tốt."},
+{q:"Nếu quân mình bị ghim vào Vua thì sao?",a:{A:"A. Không được di chuyển nếu làm Vua bị chiếu",B:"B. Cứ đi thoải mái",C:"C. Biến thành Hậu"},c:"A",l:"Quân bị ghim vào Vua rất khó di chuyển."},
+{q:"Khi đối phương dọa chiếu hết, con nên làm gì?",a:{A:"A. Ngăn chặn ngay",B:"B. Ăn Tốt xa",C:"C. Không cần quan tâm"},c:"A",l:"Mối đe dọa chiếu hết phải xử lý trước."},
+{q:"Nước chiếu hết trong 1 là gì?",a:{A:"A. Một nước đi kết thúc ván cờ",B:"B. Một nước ăn Tốt",C:"C. Một nước nhập thành"},c:"A",l:"Tìm chiếu hết trong 1 giúp luyện nhìn đòn quyết định."},
+
+{q:"Khi luyện cờ, điều nào quan trọng?",a:{A:"A. Suy nghĩ trước khi đi",B:"B. Đi thật nhanh",C:"C. Không nhìn quân đối phương"},c:"A",l:"Cờ vua giúp rèn thói quen suy nghĩ trước khi hành động."},
+{q:"Khi thua ván cờ, nên làm gì?",a:{A:"A. Xem lại lỗi để học",B:"B. Giận dữ",C:"C. Không chơi nữa"},c:"A",l:"Thua là cơ hội học bài học mới."},
+{q:"Khi thắng ván cờ, nên làm gì?",a:{A:"A. Xem mình đã làm tốt điều gì",B:"B. Chủ quan",C:"C. Không cần học nữa"},c:"A",l:"Thắng cũng cần rút kinh nghiệm."},
+{q:"Một cách tốt để tiến bộ là gì?",a:{A:"A. Giải bài tập chiến thuật mỗi ngày",B:"B. Chỉ nhìn bàn cờ",C:"C. Đi ngẫu nhiên"},c:"A",l:"Bài tập chiến thuật giúp mắt cờ tốt hơn."},
+{q:"Trước khi ăn quân, nên kiểm tra gì?",a:{A:"A. Sau khi ăn có bị mất quân lớn hơn không",B:"B. Ăn được là ăn",C:"C. Không cần tính"},c:"A",l:"Luôn tính nước đáp trả của đối phương."},
+{q:"Nếu có thể chiếu hết và ăn Hậu, nên chọn gì?",a:{A:"A. Chiếu hết",B:"B. Ăn Hậu",C:"C. Đi Tốt"},c:"A",l:"Chiếu hết kết thúc ván cờ ngay."},
+{q:"Khi Vua an toàn, quân phát triển tốt, con sẽ có gì?",a:{A:"A. Thế cờ tốt hơn",B:"B. Tự động thua",C:"C. Mất quyền đi"},c:"A",l:"An toàn Vua và phát triển quân là nền tảng ván cờ tốt."},
+{q:"Nếu một quân đứng yên không tham gia, con nên nghĩ gì?",a:{A:"A. Tìm cách đưa quân đó vào cuộc",B:"B. Bỏ mặc mãi",C:"C. Xóa quân đó"},c:"A",l:"Quân không hoạt động làm sức mạnh đội hình giảm."},
+{q:"Khi thấy đối phương có Hậu gần Vua mình, con nên làm gì?",a:{A:"A. Cẩn thận kiểm tra đòn chiếu",B:"B. Không quan tâm",C:"C. Bỏ Vua"},c:"A",l:"Hậu gần Vua thường tạo nguy hiểm lớn."},
+{q:"Bí kíp quan trọng nhất trước mỗi nước đi là gì?",a:{A:"A. Nhìn đe dọa của đối phương",B:"B. Đi thật nhanh",C:"C. Chỉ nhìn quân mình"},c:"A",l:"Luôn nhìn cả quân mình và quân đối phương."}
 ];
 
 function getNumber(key){
@@ -224,17 +288,41 @@ function addStat(key, amount){
     setNumber(key, getNumber(key) + amount);
 }
 
+function shuffleArray(arr){
+    let copy = [...arr];
+
+    for(let i = copy.length - 1; i > 0; i--){
+        let j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+
+    return copy;
+}
+
+function startNewSession(){
+    sessionScore = 0;
+    current = 0;
+    answered = false;
+
+    selectedQuestions = shuffleArray(questionBank).slice(0, 10);
+
+    document.getElementById("sessionScore").innerText = sessionScore;
+
+    loadQuestion();
+}
+
 function loadQuestion(){
     answered = false;
 
-    const q = questions[current];
+    const q = selectedQuestions[current];
 
-    document.getElementById("questionTitle").innerText = q.title;
-    document.getElementById("questionText").innerText = q.text;
+    document.getElementById("progress").innerText = "Câu " + (current + 1) + "/10";
+    document.getElementById("questionTitle").innerText = "Bài " + (current + 1);
+    document.getElementById("questionText").innerText = q.q;
 
-    document.getElementById("btnA").innerText = q.answers.A;
-    document.getElementById("btnB").innerText = q.answers.B;
-    document.getElementById("btnC").innerText = q.answers.C;
+    document.getElementById("btnA").innerText = q.a.A;
+    document.getElementById("btnB").innerText = q.a.B;
+    document.getElementById("btnC").innerText = q.a.C;
 
     document.getElementById("result").innerText = "";
 }
@@ -249,40 +337,48 @@ function checkAnswer(answer){
     answered = true;
     addStat("chess_questions", 1);
 
-    const q = questions[current];
+    const q = selectedQuestions[current];
 
-    if(answer === q.correct){
+    if(answer === q.c){
         sessionScore += 10;
 
         addStat("chess_score", 10);
         addStat("chess_correct", 1);
 
         document.getElementById("sessionScore").innerText = sessionScore;
+
         document.getElementById("result").innerHTML =
-            "✅ Chính xác! +10 điểm<br><span style='font-size:16px;color:#555'>" + q.lesson + "</span>";
+            "✅ Chính xác! +10 điểm<br><span style='font-size:16px;color:#555'>" + q.l + "</span>";
 
         document.getElementById("result").style.color = "green";
     }else{
         document.getElementById("result").innerHTML =
-            "❌ Chưa đúng. Đáp án đúng là: " + q.correct +
-            "<br><span style='font-size:16px;color:#555'>" + q.lesson + "</span>";
+            "❌ Chưa đúng. Đáp án đúng là: " + q.c +
+            "<br><span style='font-size:16px;color:#555'>" + q.l + "</span>";
 
         document.getElementById("result").style.color = "red";
     }
 }
 
 function nextQuestion(){
+    if(!answered){
+        document.getElementById("result").innerText = "Con hãy chọn một đáp án trước nhé.";
+        document.getElementById("result").style.color = "#d32f2f";
+        return;
+    }
+
     current++;
 
-    if(current >= questions.length){
-        current = 0;
-        alert("🎉 Con đã hoàn thành một vòng bài tập! Điểm phiên này: " + sessionScore);
+    if(current >= selectedQuestions.length){
+        alert("🎉 Hoàn thành 10 câu! Điểm lượt này: " + sessionScore + "/100");
+        startNewSession();
+        return;
     }
 
     loadQuestion();
 }
 
-loadQuestion();
+startNewSession();
 </script>
 
 </body>
