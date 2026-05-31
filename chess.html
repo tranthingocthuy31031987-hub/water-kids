@@ -7,82 +7,189 @@
 <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
 
 <style>
+*{
+    box-sizing:border-box;
+}
+
 body{
-    font-family: Arial, sans-serif;
-    background:#f4f6f9;
+    font-family:Arial, sans-serif;
     margin:0;
-    text-align:center;
+    background:linear-gradient(180deg,#eaf3ff 0%,#f8fbff 100%);
+    color:#222;
 }
 
 .header{
-    background:#1976d2;
+    background:linear-gradient(135deg,#1976d2,#0d47a1);
     color:white;
-    padding:25px;
+    text-align:center;
+    padding:28px 20px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
 }
 
 .header h1{
     margin:0;
+    font-size:44px;
+    letter-spacing:1px;
+}
+
+.header p{
+    margin:10px 0 0;
+    font-size:20px;
+    opacity:0.95;
 }
 
 .container{
-    max-width:900px;
+    max-width:1100px;
     margin:30px auto;
-    background:white;
-    padding:25px;
-    border-radius:16px;
-    box-shadow:0 0 15px rgba(0,0,0,0.15);
+    padding:20px;
 }
 
-#board{
-    width:480px;
-    margin:20px auto;
+.card{
+    background:white;
+    border-radius:22px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.12);
+    padding:30px;
+    text-align:center;
 }
 
 .controls{
-    margin:20px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:14px;
+    margin-bottom:25px;
 }
 
-button, select{
-    padding:12px 18px;
-    margin:8px;
-    border-radius:8px;
-    border:none;
-    font-size:16px;
-}
-
-button{
-    background:#43a047;
-    color:white;
+.label{
+    font-size:18px;
     font-weight:bold;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#2e7d32;
+    color:#0d47a1;
 }
 
 select{
-    border:1px solid #ccc;
+    padding:12px 16px;
+    border-radius:10px;
+    border:1px solid #cfd8dc;
+    font-size:16px;
+    min-width:180px;
+    background:#fff;
+}
+
+button{
+    padding:12px 22px;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.btn-green{
+    background:#43a047;
+    color:white;
+}
+
+.btn-green:hover{
+    background:#2e7d32;
+}
+
+.btn-blue{
+    background:#1976d2;
+    color:white;
+}
+
+.btn-blue:hover{
+    background:#125ca8;
+}
+
+.board-wrap{
+    display:flex;
+    justify-content:center;
+    margin:10px 0 25px;
+}
+
+#board{
+    width:min(78vw,700px);
+    max-width:700px;
+    min-width:320px;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 8px 20px rgba(0,0,0,0.18);
+}
+
+.status-box{
+    max-width:700px;
+    margin:0 auto 18px;
+    padding:16px 20px;
+    background:#f7fbff;
+    border:2px solid #d6e8ff;
+    border-radius:14px;
 }
 
 .status{
-    font-size:18px;
+    font-size:22px;
     font-weight:bold;
     color:#d32f2f;
-    margin-top:15px;
+    margin:0;
+}
+
+.note{
+    max-width:760px;
+    margin:18px auto 0;
+    color:#555;
+    font-size:16px;
+    line-height:1.6;
+}
+
+.bottom-links{
+    margin-top:24px;
 }
 
 .back{
     display:inline-block;
-    margin-top:20px;
     text-decoration:none;
-    color:#1976d2;
+    color:white;
+    background:#5e35b1;
+    padding:12px 22px;
+    border-radius:10px;
     font-weight:bold;
 }
 
-.note{
-    color:#666;
-    font-size:14px;
+.back:hover{
+    background:#4527a0;
+}
+
+@media (max-width:768px){
+    .header h1{
+        font-size:32px;
+    }
+
+    .header p{
+        font-size:17px;
+    }
+
+    .card{
+        padding:20px 15px;
+    }
+
+    .status{
+        font-size:18px;
+    }
+
+    .note{
+        font-size:15px;
+    }
+
+    button, select{
+        width:100%;
+        max-width:300px;
+    }
+
+    .controls{
+        flex-direction:column;
+    }
 }
 </style>
 </head>
@@ -90,36 +197,44 @@ select{
 <body>
 
 <div class="header">
-<h1>♟️ CỜ VUA WATER</h1>
-<p>Chơi cờ vua với máy theo cấp độ</p>
+    <h1>♟️ CỜ VUA WATER</h1>
+    <p>Chơi cờ vua với máy theo cấp độ</p>
 </div>
 
 <div class="container">
+    <div class="card">
 
-<div class="controls">
-<label><b>Chọn cấp độ:</b></label>
+        <div class="controls">
+            <span class="label">Chọn cấp độ:</span>
 
-<select id="level">
-    <option value="easy">Dễ</option>
-    <option value="medium">Trung bình</option>
-    <option value="hard">Khó</option>
-</select>
+            <select id="level">
+                <option value="easy">Dễ</option>
+                <option value="medium">Trung bình</option>
+                <option value="hard">Khó</option>
+            </select>
 
-<button onclick="newGame()">VÁN MỚI</button>
-</div>
+            <button class="btn-green" onclick="newGame()">VÁN MỚI</button>
+            <button class="btn-blue" onclick="flipBoard()">ĐỔI CHIỀU BÀN CỜ</button>
+        </div>
 
-<div id="board"></div>
+        <div class="board-wrap">
+            <div id="board"></div>
+        </div>
 
-<div class="status" id="status">
-Lượt của bạn: quân trắng
-</div>
+        <div class="status-box">
+            <p class="status" id="status">Lượt của bạn: quân trắng</p>
+        </div>
 
-<p class="note">
-Bạn cầm quân trắng. Kéo quân để đi. Máy sẽ tự đi quân đen.
-</p>
+        <p class="note">
+            Bạn cầm quân trắng, máy cầm quân đen.<br>
+            Kéo quân để đi. Sau khi bạn đi xong, máy sẽ tự đánh trả.
+        </p>
 
-<a class="back" href="index.html">← Về trang chủ</a>
+        <div class="bottom-links">
+            <a class="back" href="index.html">← Về trang chủ</a>
+        </div>
 
+    </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -129,12 +244,16 @@ Bạn cầm quân trắng. Kéo quân để đi. Máy sẽ tự đi quân đen.
 <script>
 let board = null;
 let game = new Chess();
+let currentOrientation = "white";
 
 function onDragStart(source, piece) {
     if (game.game_over()) return false;
 
     // Chỉ cho người chơi cầm quân trắng
     if (piece.search(/^b/) !== -1) return false;
+
+    // Nếu không phải lượt trắng thì không được kéo
+    if (game.turn() !== "w") return false;
 }
 
 function onDrop(source, target) {
@@ -144,12 +263,9 @@ function onDrop(source, target) {
         promotion: "q"
     });
 
-    // Nếu đi sai luật thì quân quay về vị trí cũ
     if (move === null) return "snapback";
 
     updateStatus();
-
-    // Máy đi sau 0.5 giây
     window.setTimeout(makeComputerMove, 500);
 }
 
@@ -162,6 +278,8 @@ function makeComputerMove() {
         updateStatus();
         return;
     }
+
+    if (game.turn() !== "b") return;
 
     let level = document.getElementById("level").value;
     let move;
@@ -177,6 +295,8 @@ function makeComputerMove() {
     if (level === "hard") {
         move = getBestSimpleMove();
     }
+
+    if (!move) move = getRandomMove();
 
     game.move(move);
     board.position(game.fen());
@@ -202,7 +322,7 @@ function getCaptureMove() {
 function getBestSimpleMove() {
     let moves = game.moves({ verbose: true });
     let bestMove = null;
-    let bestValue = -9999;
+    let bestValue = -99999;
 
     for (let i = 0; i < moves.length; i++) {
         let move = moves[i];
@@ -212,8 +332,7 @@ function getBestSimpleMove() {
 
         game.undo();
 
-        // Máy là quân đen nên chọn nước làm điểm thấp cho trắng
-        value = -value;
+        value = -value; // vì máy là quân đen
 
         if (value > bestValue) {
             bestValue = value;
@@ -221,7 +340,7 @@ function getBestSimpleMove() {
         }
     }
 
-    return bestMove || getRandomMove();
+    return bestMove;
 }
 
 function evaluateBoard() {
@@ -260,9 +379,13 @@ function updateStatus() {
     let status = "";
 
     if (game.in_checkmate()) {
-        status = "♛ Chiếu hết! Ván cờ kết thúc.";
+        if (game.turn() === "w") {
+            status = "♛ Chiếu hết! Máy thắng.";
+        } else {
+            status = "🎉 Chiếu hết! Bạn thắng.";
+        }
     } else if (game.in_draw()) {
-        status = "🤝 Hòa cờ.";
+        status = "🤝 Ván cờ hòa.";
     } else {
         if (game.turn() === "w") {
             status = "Lượt của bạn: quân trắng";
@@ -281,12 +404,19 @@ function updateStatus() {
 function newGame() {
     game = new Chess();
     board.start();
+    board.orientation(currentOrientation);
     updateStatus();
+}
+
+function flipBoard() {
+    currentOrientation = currentOrientation === "white" ? "black" : "white";
+    board.orientation(currentOrientation);
 }
 
 board = Chessboard("board", {
     draggable: true,
     position: "start",
+    orientation: "white",
     pieceTheme: "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png",
     onDragStart: onDragStart,
     onDrop: onDrop,
