@@ -7,7 +7,9 @@
 <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
 
 <style>
-*{box-sizing:border-box}
+*{
+    box-sizing:border-box;
+}
 
 body{
     font-family:Arial, sans-serif;
@@ -27,6 +29,11 @@ body{
 .header h1{
     margin:0;
     font-size:42px;
+}
+
+.header p{
+    margin-top:10px;
+    font-size:18px;
 }
 
 .container{
@@ -65,17 +72,37 @@ button{
     cursor:pointer;
 }
 
-.green{background:#43a047}
-.green:hover{background:#2e7d32}
+.green{
+    background:#43a047;
+}
 
-.blue{background:#1976d2}
-.blue:hover{background:#0d47a1}
+.green:hover{
+    background:#2e7d32;
+}
 
-.orange{background:#fb8c00}
-.orange:hover{background:#ef6c00}
+.blue{
+    background:#1976d2;
+}
 
-.purple{background:#5e35b1}
-.purple:hover{background:#4527a0}
+.blue:hover{
+    background:#0d47a1;
+}
+
+.orange{
+    background:#fb8c00;
+}
+
+.orange:hover{
+    background:#ef6c00;
+}
+
+.purple{
+    background:#5e35b1;
+}
+
+.purple:hover{
+    background:#4527a0;
+}
 
 #board{
     width:min(78vw,680px);
@@ -84,7 +111,7 @@ button{
 }
 
 .status-box{
-    max-width:760px;
+    max-width:780px;
     margin:18px auto;
     padding:18px;
     background:#f7fbff;
@@ -102,7 +129,7 @@ button{
     margin-top:12px;
     color:#444;
     font-size:17px;
-    line-height:1.5;
+    line-height:1.6;
 }
 
 .score{
@@ -130,11 +157,27 @@ button{
 }
 
 @media(max-width:700px){
-    .header h1{font-size:30px}
-    .container{margin:18px 10px;padding:18px 10px}
-    .controls{flex-direction:column}
-    select, button{width:90%;max-width:320px}
-    #status{font-size:18px}
+    .header h1{
+        font-size:30px;
+    }
+
+    .container{
+        margin:18px 10px;
+        padding:18px 10px;
+    }
+
+    .controls{
+        flex-direction:column;
+    }
+
+    select, button{
+        width:90%;
+        max-width:320px;
+    }
+
+    #status{
+        font-size:18px;
+    }
 }
 </style>
 </head>
@@ -158,7 +201,7 @@ button{
         </select>
 
         <button class="green" onclick="newGame()">VÁN MỚI</button>
-        <button class="orange" onclick="showHint()">💡 GỢI Ý</button>
+        <button class="orange" onclick="showHint()">💡 GỢI Ý GIÚP TRẮNG THẮNG</button>
         <button class="blue" onclick="flipBoard()">ĐỔI CHIỀU BÀN CỜ</button>
     </div>
 
@@ -170,12 +213,14 @@ button{
 
     <div class="status-box">
         <div id="status">Lượt của bạn: quân trắng</div>
-        <div id="lesson">Bí kíp: Phát triển quân, bảo vệ Vua, kiểm soát trung tâm.</div>
+        <div id="lesson">
+            Bí kíp: Phát triển quân, bảo vệ Vua, kiểm soát trung tâm.
+        </div>
     </div>
 
     <p class="note">
         Bạn cầm quân trắng. Kéo quân để đi. Máy sẽ tự đánh quân đen.<br>
-        Đi nước tốt, ăn quân, chiếu Vua hoặc chiếu hết sẽ được cộng điểm.
+        Nút gợi ý sẽ ưu tiên nước giúp quân trắng có lợi hơn: chiếu hết, chiếu Vua, ăn quân, phát triển quân và kiểm soát trung tâm.
     </p>
 
     <a class="back" href="index.html">← Về trang chủ</a>
@@ -216,6 +261,11 @@ function addStat(key, amount){
 
 function addScore(points){
     gameScore += points;
+
+    if(gameScore < 0){
+        gameScore = 0;
+    }
+
     document.getElementById("gameScore").innerText = gameScore;
 }
 
@@ -225,13 +275,15 @@ function setLesson(text){
 
 function onDragStart(source, piece) {
     if (game.game_over()) return false;
+
+    // Người chơi chỉ cầm quân trắng
     if (piece.search(/^b/) !== -1) return false;
+
+    // Chỉ kéo khi tới lượt trắng
     if (game.turn() !== "w") return false;
 }
 
 function onDrop(source, target) {
-    let beforeFen = game.fen();
-
     let move = game.move({
         from: source,
         to: target,
@@ -243,7 +295,7 @@ function onDrop(source, target) {
         return "snapback";
     }
 
-    evaluatePlayerMove(move, beforeFen);
+    evaluatePlayerMove(move);
     updateStatus();
 
     setTimeout(makeComputerMove, 600);
@@ -253,7 +305,7 @@ function onSnapEnd() {
     board.position(game.fen());
 }
 
-function evaluatePlayerMove(move, beforeFen){
+function evaluatePlayerMove(move){
     let lesson = "";
 
     addScore(2);
@@ -319,8 +371,14 @@ function makeComputerMove() {
 
         if(computerMove && computerMove.captured){
             let value = pieceValues[computerMove.captured] || 0;
-            addScore(-Math.floor(value / 2));
-            setLesson("⚠️ Máy vừa ăn quân của con. Con bị trừ " + Math.floor(value / 2) + " điểm. Nhớ bảo vệ quân nhé!");
+            let minus = Math.floor(value / 2);
+
+            addScore(-minus);
+
+            setLesson(
+                "⚠️ Máy vừa ăn quân của con. Con bị trừ " + minus +
+                " điểm. Bài học: cần bảo vệ quân trước khi tấn công."
+            );
         }
 
         board.position(game.fen());
@@ -332,7 +390,9 @@ function makeComputerMove() {
 
 function getRandomMove() {
     let moves = game.moves();
+
     if (moves.length === 0) return null;
+
     return moves[Math.floor(Math.random() * moves.length)];
 }
 
@@ -341,7 +401,11 @@ function getCaptureMove() {
     let captures = moves.filter(m => m.captured);
 
     if (captures.length > 0) {
-        return captures[Math.floor(Math.random() * captures.length)];
+        captures.sort(function(a,b){
+            return (pieceValues[b.captured] || 0) - (pieceValues[a.captured] || 0);
+        });
+
+        return captures[0];
     }
 
     return null;
@@ -395,6 +459,10 @@ function evaluateBoard() {
     return value;
 }
 
+/* ================================
+   GỢI Ý ƯU TIÊN GIÚP QUÂN TRẮNG THẮNG
+================================ */
+
 function showHint(){
     if(game.game_over()){
         setLesson("Ván cờ đã kết thúc. Hãy bấm VÁN MỚI để chơi lại.");
@@ -406,35 +474,159 @@ function showHint(){
         return;
     }
 
-    let moves = game.moves({ verbose:true });
+    let bestMove = getBestWhiteMove();
 
-    let checkingMoves = [];
+    if(!bestMove){
+        setLesson(
+            "💡 Gợi ý: Chưa tìm thấy nước thắng rõ ràng. " +
+            "Con hãy ưu tiên bảo vệ Vua, phát triển quân và kiểm soát trung tâm."
+        );
+        return;
+    }
+
+    let piece = game.get(bestMove.from);
+    let pieceName = getPieceName(piece.type);
+
+    let message = "💡 <b>Gợi ý giúp quân trắng có lợi:</b><br>";
+
+    if(bestMove.reason){
+        message += bestMove.reason + "<br>";
+    }
+
+    message +=
+        "Hãy thử đi <b>" + pieceName + "</b> từ ô <b>" +
+        bestMove.from + "</b> đến ô <b>" + bestMove.to + "</b>.";
+
+    setLesson(message);
+}
+
+function getBestWhiteMove(){
+    let moves = game.moves({ verbose:true });
+    let bestMove = null;
+    let bestScore = -999999;
 
     for(let m of moves){
+        let piece = game.get(m.from);
+        if(!piece) continue;
+
+        let moveCountBefore = game.history().length;
+
         game.move(m);
-        if(game.in_check()){
-            checkingMoves.push(m);
+
+        let score = evaluateBoard(); // điểm dương là lợi cho trắng
+        let reason = "";
+
+        // 1. Chiếu hết là ưu tiên cao nhất
+        if(game.in_checkmate()){
+            score += 100000;
+            reason = "🏆 Đây là nước chiếu hết, có thể thắng ngay.";
         }
+        // 2. Chiếu Vua
+        else if(game.in_check()){
+            score += 500;
+            reason = "⚡ Đây là nước chiếu Vua đối phương.";
+        }
+
+        // 3. Ăn quân
+        if(m.captured){
+            let capturedValue = pieceValues[m.captured] || 0;
+            score += capturedValue * 8;
+
+            if(reason === ""){
+                reason = "🎯 Nước này ăn được quân đối phương.";
+            }
+        }
+
+        // 4. Phong cấp
+        if(m.promotion){
+            score += 900;
+            reason = "👑 Nước này có thể phong cấp, rất mạnh.";
+        }
+
+        // 5. Nhập thành
+        if(m.flags && (m.flags.includes("k") || m.flags.includes("q"))){
+            score += 120;
+
+            if(reason === ""){
+                reason = "🛡️ Nước này giúp nhập thành, bảo vệ Vua tốt hơn.";
+            }
+        }
+
+        // 6. Phát triển Mã/Tượng ở khai cuộc
+        if(piece.color === "w" &&
+           (piece.type === "n" || piece.type === "b") &&
+           ["b1","g1","c1","f1"].includes(m.from)){
+            score += 90;
+
+            if(reason === ""){
+                reason = "📘 Nước này giúp phát triển quân nhẹ, tốt cho khai cuộc.";
+            }
+        }
+
+        // 7. Kiểm soát trung tâm
+        if(["d4","e4","d5","e5"].includes(m.to)){
+            score += 60;
+
+            if(reason === ""){
+                reason = "🎯 Nước này giúp kiểm soát trung tâm.";
+            }
+        }
+
+        // 8. Tránh đưa Hậu ra quá sớm
+        if(piece.type === "q" && moveCountBefore < 8){
+            score -= 80;
+        }
+
+        // 9. Tránh đẩy Tốt biên / Tốt cánh Vua bừa bãi khi mới khai cuộc
+        if(piece.type === "p" &&
+           ["a","h","g"].includes(m.from[0]) &&
+           moveCountBefore < 8 &&
+           !m.captured){
+            score -= 120;
+        }
+
+        // 10. Hạn chế nước làm quân vừa đi bị ăn ngay
+        let blackReplies = game.moves({ verbose:true });
+        let movedPieceValue = pieceValues[piece.type] || 0;
+
+        let canBeCaptured = blackReplies.some(reply =>
+            reply.to === m.to && reply.captured === piece.type
+        );
+
+        if(canBeCaptured){
+            score -= movedPieceValue * 6;
+        }
+
         game.undo();
+
+        m.score = score;
+        m.reason = reason;
+
+        if(score > bestScore){
+            bestScore = score;
+            bestMove = m;
+        }
     }
 
-    let captures = moves.filter(m => m.captured);
-
-    if(checkingMoves.length > 0){
-        let m = checkingMoves[0];
-        setLesson("💡 Gợi ý: Có nước chiếu Vua. Hãy thử nhìn quân có thể đi từ <b>" + m.from + "</b> đến <b>" + m.to + "</b>.");
-        return;
-    }
-
-    if(captures.length > 0){
-        let m = captures[0];
-        setLesson("💡 Gợi ý: Có thể ăn quân đối phương. Hãy xem nước từ <b>" + m.from + "</b> đến <b>" + m.to + "</b>.");
-        return;
-    }
-
-    let random = moves[Math.floor(Math.random() * moves.length)];
-    setLesson("💡 Gợi ý: Hãy phát triển quân hoặc kiểm soát trung tâm. Có thể xem thử nước từ <b>" + random.from + "</b> đến <b>" + random.to + "</b>.");
+    return bestMove;
 }
+
+function getPieceName(type){
+    const names = {
+        p: "Tốt",
+        n: "Mã",
+        b: "Tượng",
+        r: "Xe",
+        q: "Hậu",
+        k: "Vua"
+    };
+
+    return names[type] || "Quân cờ";
+}
+
+/* ================================
+   TRẠNG THÁI, LƯU ĐIỂM, VÁN MỚI
+================================ */
 
 function updateStatus() {
     let status = "";
@@ -468,6 +660,7 @@ function updateStatus() {
 function countGameIfFinished(){
     if(game.game_over() && !gameCounted){
         gameCounted = true;
+
         addStat("chess_games", 1);
         addStat("chess_score", Math.max(0, gameScore));
     }
@@ -484,6 +677,7 @@ function newGame() {
     board.orientation(currentOrientation);
 
     updateStatus();
+
     setLesson("Bí kíp: Phát triển quân, bảo vệ Vua, kiểm soát trung tâm.");
 }
 
