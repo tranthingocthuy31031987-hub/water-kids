@@ -110,6 +110,16 @@ button{
     box-shadow:0 8px 20px rgba(0,0,0,0.2);
 }
 
+/* Ô đang chọn sẽ sáng màu vàng */
+.highlight-square{
+    box-shadow: inset 0 0 0 5px #ffeb3b !important;
+}
+
+/* Đổi con trỏ để trẻ biết có thể bấm */
+#board .square-55d63{
+    cursor:pointer;
+}
+
 .status-box{
     max-width:780px;
     margin:18px auto;
@@ -186,7 +196,7 @@ button{
 
 <div class="header">
     <h1>🤖 LUYỆN CHƠI CỜ VUA VỚI MÁY</h1>
-    <p>Chơi - nhận gợi ý - rút bài học sau mỗi nước</p>
+    <p>Bấm quân cờ - bấm ô muốn đi - máy sẽ đánh lại</p>
 </div>
 
 <div class="container">
@@ -214,13 +224,13 @@ button{
     <div class="status-box">
         <div id="status">Lượt của bạn: quân trắng</div>
         <div id="lesson">
-            Bí kíp: Phát triển quân, bảo vệ Vua, kiểm soát trung tâm.
+            Bí kíp: Bấm vào quân trắng, sau đó bấm vào ô muốn đi.
         </div>
     </div>
 
     <p class="note">
-        Bạn cầm quân trắng. Kéo quân để đi. Máy sẽ tự đánh quân đen.<br>
-        Nút gợi ý sẽ ưu tiên nước giúp quân trắng có lợi hơn: chiếu hết, chiếu Vua, ăn quân, phát triển quân và kiểm soát trung tâm.
+        Bạn cầm quân trắng. Không cần kéo lê quân cờ.<br>
+        Chỉ cần bấm quân muốn đi, rồi bấm ô đích. Máy sẽ tự đánh quân đen.
     </p>
 
     <a class="back" href="index.html">← Về trang chủ</a>
@@ -237,6 +247,7 @@ let game = new Chess();
 let currentOrientation = "white";
 let gameScore = 0;
 let gameCounted = false;
+let selectedSquare = null;
 
 const pieceValues = {
     p: 10,
@@ -273,36 +284,98 @@ function setLesson(text){
     document.getElementById("lesson").innerHTML = text;
 }
 
-function onDragStart(source, piece) {
-    if (game.game_over()) return false;
+/* ================================
+   BẤM QUÂN - BẤM Ô ĐÍCH
+================================ */
 
-    // Người chơi chỉ cầm quân trắng
-    if (piece.search(/^b/) !== -1) return false;
-
-    // Chỉ kéo khi tới lượt trắng
-    if (game.turn() !== "w") return false;
+function clearHighlights(){
+    $("#board .square-55d63").removeClass("highlight-square");
 }
 
-function onDrop(source, target) {
+function highlightSquare(square){
+    clearHighlights();
+
+    $("#board .square-55d63").each(function(){
+        if($(this).data("square") === square){
+            $(this).addClass("highlight-square");
+        }
+    });
+}
+
+function handleSquareClick(square){
+    if(game.game_over()){
+        setLesson("Ván cờ đã kết thúc. Hãy bấm VÁN MỚI để chơi lại.");
+        return;
+    }
+
+    if(game.turn() !== "w"){
+        setLesson("Chưa tới lượt con. Hãy chờ máy đi xong.");
+        return;
+    }
+
+    const piece = game.get(square);
+
+    // Nếu chưa chọn quân nào
+    if(selectedSquare === null){
+
+        if(piece && piece.color === "w"){
+            selectedSquare = square;
+            highlightSquare(square);
+
+            setLesson(
+                "Con đã chọn quân <b>" + getPieceName(piece.type) +
+                "</b> ở ô <b>" + square + "</b>.<br>" +
+                "Bây giờ hãy bấm vào ô muốn đi."
+            );
+        }else{
+            setLesson("Con hãy bấm chọn một quân trắng trước.");
+        }
+
+        return;
+    }
+
+    // Nếu bấm lại đúng ô đang chọn thì hủy chọn
+    if(selectedSquare === square){
+        selectedSquare = null;
+        clearHighlights();
+        setLesson("Đã hủy chọn quân. Con hãy chọn quân khác.");
+        return;
+    }
+
+    // Nếu bấm vào quân trắng khác thì đổi quân đang chọn
+    if(piece && piece.color === "w"){
+        selectedSquare = square;
+        highlightSquare(square);
+
+        setLesson(
+            "Con đã đổi sang chọn quân <b>" + getPieceName(piece.type) +
+            "</b> ở ô <b>" + square + "</b>."
+        );
+
+        return;
+    }
+
+    // Thử đi quân từ ô đã chọn đến ô vừa bấm
     let move = game.move({
-        from: source,
-        to: target,
+        from: selectedSquare,
+        to: square,
         promotion: "q"
     });
 
-    if (move === null) {
-        setLesson("❌ Nước đi chưa hợp lệ. Con hãy thử nước khác nhé.");
-        return "snapback";
+    if(move === null){
+        setLesson("❌ Nước đi chưa hợp lệ. Con hãy chọn ô khác hoặc chọn lại quân.");
+        return;
     }
+
+    selectedSquare = null;
+    clearHighlights();
+
+    board.position(game.fen());
 
     evaluatePlayerMove(move);
     updateStatus();
 
     setTimeout(makeComputerMove, 600);
-}
-
-function onSnapEnd() {
-    board.position(game.fen());
 }
 
 function evaluatePlayerMove(move){
@@ -342,6 +415,10 @@ function evaluatePlayerMove(move){
     setLesson(lesson);
 }
 
+/* ================================
+   MÁY ĐÁNH QUÂN ĐEN
+================================ */
+
 function makeComputerMove() {
     if (game.game_over()) {
         updateStatus();
@@ -377,7 +454,7 @@ function makeComputerMove() {
 
             setLesson(
                 "⚠️ Máy vừa ăn quân của con. Con bị trừ " + minus +
-                " điểm. Bài học: cần bảo vệ quân trước khi tấn công."
+                " điểm.<br>Bài học: cần bảo vệ quân trước khi tấn công."
             );
         }
 
@@ -478,7 +555,7 @@ function showHint(){
 
     if(!bestMove){
         setLesson(
-            "💡 Gợi ý: Chưa tìm thấy nước thắng rõ ràng. " +
+            "💡 Gợi ý: Chưa tìm thấy nước thắng rõ ràng.<br>" +
             "Con hãy ưu tiên bảo vệ Vua, phát triển quân và kiểm soát trung tâm."
         );
         return;
@@ -670,30 +747,42 @@ function newGame() {
     game = new Chess();
     gameScore = 0;
     gameCounted = false;
+    selectedSquare = null;
 
     document.getElementById("gameScore").innerText = gameScore;
+
+    clearHighlights();
 
     board.start();
     board.orientation(currentOrientation);
 
     updateStatus();
 
-    setLesson("Bí kíp: Phát triển quân, bảo vệ Vua, kiểm soát trung tâm.");
+    setLesson("Bí kíp: Bấm vào quân trắng, sau đó bấm vào ô muốn đi.");
 }
 
 function flipBoard() {
     currentOrientation = currentOrientation === "white" ? "black" : "white";
     board.orientation(currentOrientation);
+    clearHighlights();
+    selectedSquare = null;
 }
 
+/* ================================
+   KHỞI TẠO BÀN CỜ
+================================ */
+
 board = Chessboard("board", {
-    draggable: true,
+    draggable: false,
     position: "start",
     orientation: "white",
-    pieceTheme: "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png",
-    onDragStart: onDragStart,
-    onDrop: onDrop,
-    onSnapEnd: onSnapEnd
+    pieceTheme: "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png"
+});
+
+// Bấm vào ô cờ để chọn quân và đi quân
+$("#board").on("click", ".square-55d63", function(){
+    const square = $(this).data("square");
+    handleSquareClick(square);
 });
 
 updateStatus();
